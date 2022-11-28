@@ -59,40 +59,12 @@ const inputClosePin = document.querySelector('.form__input--pin');
 
 // LECTURES
 
-
-/*
-We set the sort parameter to false by default: false because we 
-do want to show the movements just in the order they appear in 
-the array. But as we click that sort button, we will then call 
-this function 'displayMovements' with sort set to true.
-
--*/
-
-const displayMovements = function(movements, sort = false) {
+const displayMovements = (movements, sort = false) => {
   containerMovements.innerHTML = ''
-  /* 
-  we cannot do this movements.sort(), and that is because the 
-  sort method will then order the actual underlying array.
-  So, the actual movements array as it is in the account object.
-  But that is not what we want. All we want is to display a sorted
-  movements array but we do not want to sort the original 
-  underlying data. For that we take a copy of the movemenets array
-  and sort that, so we use the slice() method.
-  This is one of those situatiuons where we need to create a copy,
-  using the slice() method and not the ...spread operator, because 
-  here we are in the middle of a chain.
-  And then we need our compare function.
-  */
+
   const movs = sort ? movements.slice().sort((a, b) => a - b) : movements
-  /*
-  With this we adapted our displayMovements function to support 
-  sorting. We did that allowing a second parameter (sort), which
-  is an optional parameter called sort and then if sort is set 
-  to true, then the movements that we are gonna use to display 
-  them will be sorted like this and if it is set to false, then 
-  the regular movements as they are passed in will be displayed.
-  */
-  movs.forEach(function(mov, i) {
+
+  movs.forEach((mov, i) => {
     const type = mov > 0 ? 'deposit' : 'withdrawal'
 
     const html = `
@@ -105,12 +77,12 @@ const displayMovements = function(movements, sort = false) {
   })
 }
 
-const calcDisplayBalance = function (acc) {
+const calcDisplayBalance = acc => {
   acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
   labelBalance.textContent = `${acc.balance}€`;
 };
 
-const calcDisplaySummary = function (acc) {
+const calcDisplaySummary = acc => {
   const incomes = acc.movements
     .filter(mov => mov > 0)
     .reduce((acc, mov) => acc + mov, 0);
@@ -131,8 +103,8 @@ const calcDisplaySummary = function (acc) {
   labelSumInterest.textContent = `${interest} Eur`
 }
 
-const createUsernames = function (accs) {
-  accs.forEach(function (acc) {
+const createUsernames = accs => {
+  accs.forEach(acc => {
     acc.username = acc.owner
       .toLowerCase()
       .split(' ')
@@ -142,7 +114,7 @@ const createUsernames = function (accs) {
 };
 createUsernames(accounts);
 
-const updateUI = function (acc) {
+const updateUI = acc => {
   // Display movements
   displayMovements(acc.movements);
 
@@ -156,7 +128,7 @@ const updateUI = function (acc) {
 // Event handler
 let currentAccount;
 
-btnLogin.addEventListener('click', function (e) {
+btnLogin.addEventListener('click', e => {
   // Prevent form from submitting
   e.preventDefault();
 
@@ -165,7 +137,7 @@ btnLogin.addEventListener('click', function (e) {
   );
   console.log(currentAccount);
 
-  if (currentAccount?.pin === Number(inputLoginPin.value)) {
+  if (currentAccount?.pin === +(inputLoginPin.value)) {
     // Display UI and message
     labelWelcome.textContent = `Welcome back, ${
       currentAccount.owner.split(' ')[0]
@@ -181,9 +153,9 @@ btnLogin.addEventListener('click', function (e) {
   }
 })
 
-btnTransfer.addEventListener('click', function (e) {
+btnTransfer.addEventListener('click', e => {
   e.preventDefault();
-  const amount = Number(inputTransferAmount.value);
+  const amount = +(inputTransferAmount.value);
   const receiverAcc = accounts.find(
     acc => acc.username === inputTransferTo.value
   );
@@ -204,10 +176,10 @@ btnTransfer.addEventListener('click', function (e) {
   }
 });
 
-btnLoan.addEventListener('click', function(e) {
+btnLoan.addEventListener('click', e => {
   e.preventDefault()
 
-  const amount = Number(inputLoanAmount.value)
+  const amount = +(inputLoanAmount.value)
 
   if(amount > 0 && currentAccount.movements.some(mov => 
     mov >= amount / 10)) {
@@ -220,10 +192,10 @@ btnLoan.addEventListener('click', function(e) {
   inputLoanAmount.value = ''
 })
 
-btnClose.addEventListener('click', function(e) {
+btnClose.addEventListener('click', e => {
   e.preventDefault()
   if(inputCloseUsername.value === currentAccount
-    .username && Number(inputClosePin.value) === 
+    .username && +(inputClosePin.value) === 
     currentAccount.pin
   ) {
       const index = accounts.findIndex(
@@ -240,37 +212,17 @@ btnClose.addEventListener('click', function(e) {
 })
 
 let sorted = false  
-// because in the beginning our array is not sorted.
-// And if here is false, then inside the next function it needs 
-// to become true.
-btnSort.addEventListener('click', (e) => {
+btnSort.addEventListener('click', e => {
   e.preventDefault()
   displayMovements(currentAccount.movements, !sorted) // the second parameter we will set to true (!sorted). That is the sort parameter.
   sorted = !sorted
-}) // if we are in doubt, in VS Code, we can hold the mouse on displayMovements, it shows us what we can pass into the function ((movements: any, sort?: boolean))
+})
 
 const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
 
-
-
 const accountMovements = accounts.map(acc => acc.movements)
-console.log(accountMovements); 
-
 
 const overalBalance = accounts
   .flatMap(acc => acc.movements)
   .reduce((acc, mov) => acc + mov, 0)
-console.log(overalBalance); // 17840
-
-
-
-/*
-In our App we have a 'sort' button. This sort will sort the 
-movements. As we click it, it will sort them in descending 
-order.
-Then, as we click it again, it goes back to normal.
-*/
-
-
-
 
