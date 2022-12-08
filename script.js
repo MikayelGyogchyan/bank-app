@@ -85,6 +85,13 @@ const formatMovementDate = (date, locale) => {
   return new Intl.DateTimeFormat(locale).format(date)
 };
 
+const formatCur = (value, locale, currency) => {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency', // we write the 'options' object right inside
+    currency: currency
+  }).format(value)
+}
+
 const displayMovements = (acc, sort = false) => {
   containerMovements.innerHTML = '';
 
@@ -98,13 +105,15 @@ const displayMovements = (acc, sort = false) => {
     const date = new Date(acc.movementsDates[i]);
     const displayDate = formatMovementDate(date, acc.locale);
 
+    const formattedMov = formatCur(mov, acc.locale, acc.currency)
+
     const html = `
       <div class="movements__row">
         <div class="movements__type movements__type--${type}">${
       i + 1
     } ${type}</div>
         <div class="movements__date">${displayDate}</div>
-        <div class="movements__value">${mov.toFixed(2)}</div>
+        <div class="movements__value">${formattedMov}</div>
       </div>
     `;
     containerMovements.insertAdjacentHTML('afterbegin', html);
@@ -113,19 +122,19 @@ const displayMovements = (acc, sort = false) => {
 
 const calcDisplayBalance = acc => {
   acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${acc.balance.toFixed(2)}€`;
+  labelBalance.textContent = formatCur(acc.balance, acc.locale, acc.currency)
 };
 
 const calcDisplaySummary = acc => {
   const incomes = acc.movements
     .filter(mov => mov > 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumIn.textContent = `${incomes.toFixed(2)}€`;
+  labelSumIn.textContent = formatCur(incomes, acc.locale, acc.currency)
 
   const out = acc.movements
     .filter(mov => mov < 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumOut.textContent = `${Math.abs(out).toFixed(2)}€`;
+  labelSumOut.textContent = formatCur(Math.abs(out), acc.locale, acc.currency)
 
   const interest = acc.movements
     .filter(mov => mov > 0)
@@ -134,7 +143,7 @@ const calcDisplaySummary = acc => {
       return int >= 1;
     })
     .reduce((acc, int) => acc + int, 0);
-  labelSumInterest.textContent = `${interest.toFixed(2)} Eur`;
+  labelSumInterest.textContent = formatCur(interest, acc.locale, acc.currency)
 };
 
 const createUsernames = accs => {
@@ -164,10 +173,7 @@ let currentAccount;
 
 const now = new Date();
 
-// day/month/year
-
 btnLogin.addEventListener('click', e => {
-  
   // Prevent form from submitting
   e.preventDefault();
 
@@ -177,7 +183,6 @@ btnLogin.addEventListener('click', e => {
   console.log(currentAccount);
 
   if (currentAccount?.pin === +inputLoginPin.value) {
-    
     // Display UI and message
     labelWelcome.textContent = `Welcome back, ${
       currentAccount.owner.split(' ')[0]
@@ -193,7 +198,8 @@ btnLogin.addEventListener('click', e => {
       year: 'numeric',
     }
 
-  labelDate.textContent = new Intl.DateTimeFormat(currentAccount.locale, options).format(now) 
+    labelDate.textContent = new Intl.DateTimeFormat(currentAccount.locale, options).format(now) // to use the internationalization API we do 'new Intl' that is the namespace for the internationalization API, then for times and dates we use the '.DateTimeFormat()' function
+
     // Clear input fields
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
@@ -222,9 +228,9 @@ btnTransfer.addEventListener('click', e => {
     receiverAcc.movements.push(amount);
 
     // Add transfer Date
-    currentAccount.movementsDates.push(new Date().toISOString()); 
-    receiverAcc.movementsDates.push(new Date().toISOString()); 
-    
+    currentAccount.movementsDates.push(new Date().toISOString()); // JS will convert this date into a nicely formatted string
+    receiverAcc.movementsDates.push(new Date().toISOString()); // the same for the receiver, because the receiver also gets a new movement here. So, they also need a new date for that movement.
+
     // Update UI
     updateUI(currentAccount);
   }
@@ -274,3 +280,4 @@ btnSort.addEventListener('click', e => {
   displayMovements(currentAccount.movements, !sorted);
   sorted = !sorted;
 });
+
