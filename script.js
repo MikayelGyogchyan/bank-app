@@ -82,15 +82,15 @@ const formatMovementDate = (date, locale) => {
   if (daysPassed === 1) return 'Yesterday';
   if (daysPassed <= 7) return `${daysPassed} days ago`;
 
-  return new Intl.DateTimeFormat(locale).format(date)
+  return new Intl.DateTimeFormat(locale).format(date);
 };
 
 const formatCur = (value, locale, currency) => {
   return new Intl.NumberFormat(locale, {
-    style: 'currency', // we write the 'options' object right inside
-    currency: currency
-  }).format(value)
-}
+    style: 'currency',
+    currency: currency,
+  }).format(value);
+};
 
 const displayMovements = (acc, sort = false) => {
   containerMovements.innerHTML = '';
@@ -105,7 +105,7 @@ const displayMovements = (acc, sort = false) => {
     const date = new Date(acc.movementsDates[i]);
     const displayDate = formatMovementDate(date, acc.locale);
 
-    const formattedMov = formatCur(mov, acc.locale, acc.currency)
+    const formattedMov = formatCur(mov, acc.locale, acc.currency);
 
     const html = `
       <div class="movements__row">
@@ -122,19 +122,19 @@ const displayMovements = (acc, sort = false) => {
 
 const calcDisplayBalance = acc => {
   acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = formatCur(acc.balance, acc.locale, acc.currency)
+  labelBalance.textContent = formatCur(acc.balance, acc.locale, acc.currency);
 };
 
 const calcDisplaySummary = acc => {
   const incomes = acc.movements
     .filter(mov => mov > 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumIn.textContent = formatCur(incomes, acc.locale, acc.currency)
+  labelSumIn.textContent = formatCur(incomes, acc.locale, acc.currency);
 
   const out = acc.movements
     .filter(mov => mov < 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumOut.textContent = formatCur(Math.abs(out), acc.locale, acc.currency)
+  labelSumOut.textContent = formatCur(Math.abs(out), acc.locale, acc.currency);
 
   const interest = acc.movements
     .filter(mov => mov > 0)
@@ -143,7 +143,7 @@ const calcDisplaySummary = acc => {
       return int >= 1;
     })
     .reduce((acc, int) => acc + int, 0);
-  labelSumInterest.textContent = formatCur(interest, acc.locale, acc.currency)
+  labelSumInterest.textContent = formatCur(interest, acc.locale, acc.currency);
 };
 
 const createUsernames = accs => {
@@ -168,8 +168,39 @@ const updateUI = acc => {
   calcDisplaySummary(acc);
 };
 
-// Event handler
-let currentAccount;
+const startLogOutTimer = () => {
+  const tick = () => {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0) // the minute is current time / 60
+    const sec = String(time % 60).padStart(2, 0) // the secs will be the remainder of dividing time by 60
+    // 100 / 60 = 1.666666
+    // 100 % 60 = 40 
+
+    // In each call, print the remaining time to UI
+    labelTimer.textContent = `${min}:${sec}`;
+
+    // When 0 seconds, stop timer and log out user
+    if(time === 0) {
+      clearInterval(timer)
+      labelWelcome.textContent = 'Log in to get Started'
+      containerApp.style.opacity = 0;
+    }
+
+    // Decrease 1s
+    time--;
+  }
+
+  // Set time to 5 minutes
+  let time = 120;
+
+  // Call the timer every second
+  tick()
+  const timer = setInterval(tick, 1000);
+  
+  return timer
+};
+
+// Event handlers
+let currentAccount, timer;
 
 const now = new Date();
 
@@ -190,19 +221,26 @@ btnLogin.addEventListener('click', e => {
     containerApp.style.opacity = 100;
 
     const now = new Date();
-    const options = { 
+    const options = {
       hour: 'numeric',
       minute: 'numeric',
       day: 'numeric',
-      month: 'numeric', 
+      month: 'numeric',
       year: 'numeric',
-    }
+    };
 
-    labelDate.textContent = new Intl.DateTimeFormat(currentAccount.locale, options).format(now) // to use the internationalization API we do 'new Intl' that is the namespace for the internationalization API, then for times and dates we use the '.DateTimeFormat()' function
+    labelDate.textContent = new Intl.DateTimeFormat(
+      currentAccount.locale,
+      options
+    ).format(now); // to use the internationalization API we do 'new Intl' that is the namespace for the internationalization API, then for times and dates we use the '.DateTimeFormat()' function
 
     // Clear input fields
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
+
+    // Timer
+    if(timer) clearInterval(timer)
+    timer = startLogOutTimer()
 
     // Update UI
     updateUI(currentAccount);
@@ -233,17 +271,20 @@ btnTransfer.addEventListener('click', e => {
 
     // Update UI
     updateUI(currentAccount);
+
+    // Reset timer
+    clearInterval(timer)
+    timer = startLogOutTimer()
   }
 });
 
 btnLoan.addEventListener('click', e => {
   e.preventDefault();
 
-  const amount = Math.floor(inputLoanAmount.value); 
-  
+  const amount = Math.floor(inputLoanAmount.value);
+
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount / 10)) {
     setTimeout(() => {
-
       // Add movement
       currentAccount.movements.push(amount);
 
@@ -251,8 +292,12 @@ btnLoan.addEventListener('click', e => {
       currentAccount.movementsDates.push(new Date().toISOString());
 
       // Update UI
-      updateUI(currentAccount)
-    }, 2500)
+      updateUI(currentAccount);
+
+      // Reset timer
+      clearInterval(timer)
+      timer = startLogOutTimer()
+    }, 2500);
   }
   inputLoanAmount.value = '';
 });
@@ -283,4 +328,3 @@ btnSort.addEventListener('click', e => {
   displayMovements(currentAccount.movements, !sorted);
   sorted = !sorted;
 });
-
